@@ -11,9 +11,8 @@ which features from the list DATASET_FEATURES are represented in the
 corresponding chart and saves this as a "represented_feature_embedding"
 '''
 
-# TODO: update this with the whole list of features when available
-DATASET_FEATURES = ["G3", "paid", "higher", "traveltime", "address", "health", "absences", "st_time", "Dalc", "romantic", "internet", "G2", "G1", "sex", "age", "paid", "Walc", "studytime", "Pstatus"]
-    
+DATASET_FEATURES = ["state", "sex", "age", "address", "famsize", "Pstatus", "Medu", "Fedu", "Mjob", "Fjob", "reason", "guardian", "traveltime", "studytime", "failures", "schoolsup", "famsup", "paid", "activities", "nursery", "higher", "internet", "romantic", "famrel", "freetime", "goout", "Dalc", "Walc", "health", "absences", "G1", "G2", "G3"]
+
 def generate_represented_features_embeddings(df):
 
     # create dataFrame with an accessible "index" column for reporting
