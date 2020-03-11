@@ -125,10 +125,10 @@ def render_visualization():
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if button_id == "Data Coverage Board_toggle" and n1:
-            return not is_open1, False
+            return not is_open1, is_open2
         elif button_id == "Cluster Board_toggle" and n2:
-            return False, not is_open2
-        return False, False
+            return is_open1, not is_open2
+        return True, True
 
     app.run_server(debug=True)
 
