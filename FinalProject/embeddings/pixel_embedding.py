@@ -14,4 +14,3 @@ saves this as a "pixel_embedding"
 '''
 def generate_pixel_embeddings(df):
     df["pixel_embedding"] = df.apply(lambda x : np.array(x.image.resize((100,100)).convert("L")).flatten()/255, axis=1)
-    return df

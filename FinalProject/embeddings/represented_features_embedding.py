@@ -20,8 +20,7 @@ def generate_represented_features_embeddings(df):
     df_temp = df.reset_index()
 
     df["represented_features_embeddings"] = df_temp.apply(lambda x : __which_features(x["index"], x["features"]), axis=1)
-    
-    return df
+
 
 def __which_features(index, dim_list):
 
