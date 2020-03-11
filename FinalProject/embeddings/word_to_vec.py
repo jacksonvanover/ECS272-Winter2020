@@ -1,17 +1,5 @@
-import statsmodels.api as sm
-from sklearn import preprocessing
-from sklearn.preprocessing import StandardScaler
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.corpus import stopwords
 from gensim.models import Word2Vec
-import pickle
-
-with open("pouneh_df.pkl", "rb") as f:
-    data_pick = []
-    data_pick = pickle.load(f)
-    
-    
-m = Word2Vec(data_pick.keyword, size=50, min_count=1 ,sg=1)
+import numpy as np
 
 def vectorizer (sent, m):
     vec = []
@@ -28,27 +16,29 @@ def vectorizer (sent, m):
             pass
     
         return np.asarray(vec) / numw
-    
-l=[]
-for i in data_pick.keyword:
-    l.append(vectorizer(i,m))
-    
-X = ''    
-X=np.array(l)   
+        
 
-l2 = [[] if l[i] is None else l[i].tolist() for i in range(len(l))]
+def generate_word2vec_embeddings(data_pick):
+        
+    m = Word2Vec(data_pick.keywords, size=50, min_count=1 ,sg=1)
 
-length = max(map(len, l2))
-y=np.array([xi+[0]*(length-len(xi)) for xi in l2])
+    l=[]
+    for i in data_pick.keywords:
+        l.append(vectorizer(i,m))
+        
+    X = ''    
+    X=np.array(l)   
 
-y_mean = np.mean(y)
-y_std = np.std(y)
-y_normal = (y-y_mean)/y_std
-y_normal.shape
+    l2 = [[] if l[i] is None else l[i].tolist() for i in range(len(l))]
 
-#y_normal
-y_norm_list = [list(y_normal[i]) for i in range(len(y_normal))]
-data_pick['WordToVec'] = y_norm_list 
+    length = max(map(len, l2))
+    y=np.array([xi+[0]*(length-len(xi)) for xi in l2])
 
-with open("pouneh_df", 'wb') as d:
-    pickle.dump(data_pick,d)
+    y_mean = np.mean(y)
+    y_std = np.std(y)
+    y_normal = (y-y_mean)/y_std
+    y_normal.shape
+
+    #y_normal
+    y_norm_list = [list(y_normal[i]) for i in range(len(y_normal))]
+    data_pick['word2vec_embeddings'] = y_norm_list 
