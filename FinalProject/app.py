@@ -14,6 +14,7 @@ from dash.dependencies import Input, Output, State
 import plotly.express as px
 
 from Embedding_concat import concat_embeddings
+from pca_reduction import pca_columns
 
 '''
 COLUMN_NAMES :
@@ -232,18 +233,20 @@ def render_visualization():
             Input('cluster_slider', 'value')]
     )
     def update_chart(wt1, wt2, wt3, k):
+        global df
         concat_embeddings(df, wt1, wt2, wt3)
         embedding_combo_array = np.array(df['concat_embedding'].tolist())
         km = KMeans(n_clusters=k, random_state=10).fit(embedding_combo_array)
         df['cluster'] = km.labels_ 
         
         #insert call to recalculate PCA#
+        df = pca_columns(df)
         
-        # fig = px.scatter(df, x="PC1", y="PC2", color="cluster",
-        #         hover_data=['title'])
+        fig = px.scatter(df, x="PC1", y="PC2", color="cluster",
+                hover_data=['title'])
 
         # temporary scatterplot
-        fig = px.scatter(x=[0,1,2,3,4], y=[0,1,4,9,16])
+        #fig = px.scatter(x=[0,1,2,3,4], y=[0,1,4,9,16])
 
         return [fig]
 
