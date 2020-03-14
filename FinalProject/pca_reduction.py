@@ -17,7 +17,13 @@ def pca_columns(df):
     dims = ['PC1','PC2']
     for i in range(2):
         reduce_dim_data_df.rename(columns = {i: dims[i]},inplace = True)
+    
+    #if columns are already there, then replace them
+    if 'PC1' in df:
+        df['PC1'] = reduce_dim_data_df['PC1']
+        df['PC2'] = reduce_dim_data_df['PC2']
         
-    #concatentate PCA values to df
-    df = pd.concat([df,reduce_dim_data_df],axis = 1, sort = False)
+    #else concatentate PCA values to df
+    else:
+        df = pd.concat([df,reduce_dim_data_df],axis = 1, sort = False)
     return df
