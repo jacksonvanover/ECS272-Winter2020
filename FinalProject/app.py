@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import subprocess
+import os
 import pickle
 
 import dash
@@ -28,8 +30,6 @@ def collapsible_item(i):
 
 #begin visualization
 def render_visualization():
-
-    #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -133,4 +133,13 @@ def render_visualization():
     app.run_server(debug=True)
 
 if __name__ == "__main__":
+
+    global df
+
+    if not os.path.isfile("dataFrames/df_embeddings.pckl"):
+        subprocess.call(["unzip", "df_embeddings.zip"], cwd=f"{os.path.dirname(os.path.abspath(__file__))}/dataFrames/")
+    
+    with open("dataFrames/df_embeddings.pckl", "rb") as f:
+        df = pickle.load(f)
+
     render_visualization()
