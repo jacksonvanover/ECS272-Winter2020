@@ -10,6 +10,18 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
+'''
+COLUMN_NAMES :
+        'image',
+        'title',
+        'author',
+        'keywords',
+        'features',
+        'code',
+        'pixel_embedding', 
+        'represented_features_embeddings',
+        'word2vec_embeddings'
+'''
 def collapsible_item(i):
     # we use this function to make the collapsible items to avoid code duplication
     return dbc.Card(
