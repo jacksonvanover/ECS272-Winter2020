@@ -12,6 +12,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 import plotly.express as px
+import plotly.graph_objects as go
 
 from Embedding_concat import concat_embeddings
 from pca_reduction import pca_columns
@@ -29,23 +30,17 @@ COLUMN_NAMES :
         'word2vec_embeddings'
 '''
 
-def collapsible_item(i):
-    # we use this function to make the collapsible items to avoid code duplication
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Button(
-                    f"{i}",
-                    color="link",
-                    id=f"{i}_toggle",
-                )
-            ),
-            dbc.Collapse(
-                dbc.CardBody(f"{i} goes here..."),
-                id=f"collapse_{i}",
-            ),
-        ]
-    )
+DEFAULT_COLORS = [
+    '#1f77b4',  # muted blue
+    '#ff7f0e',  # safety orange
+    '#d62728',  # brick red
+    '#8c564b',  # chestnut brown
+    '#e377c2',  # raspberry yogurt pink
+    '#7f7f7f',  # middle gray
+    '#bcbd22',  # curry yellow-green
+    '#17becf'   # blue-teal
+    '#2ca02c',  # cooked asparagus green
+]
 
 #begin visualization
 def render_visualization():
@@ -112,7 +107,17 @@ def render_visualization():
                             ),
 
                             html.Div(
-                                children=dcc.Markdown('# filters go here'),
+                                children=[
+                                          dcc.Dropdown(id = 'author_filter',
+                                          options=author_filter,
+                                          multi=True,
+                                          value=[]
+                                          ),
+                                          dcc.Dropdown(id = 'keyword_filter',
+                                          options=keyword_filter,
+                                          multi=True,
+                                          value=[]
+                                      )],
                                 style={
                                     'height' : '25em',
                                     'backgroundColor' : 'rgba(255,255,255,0.5)'
@@ -130,7 +135,13 @@ def render_visualization():
                 # column with scatterplot
                 dbc.Col(
                     html.Div(
-                        children=dcc.Graph(figure=px.scatter(x=[0,1,2,3,4], y=[0,1,4,9,16]),id='scatter_plot'),
+                        children=dcc.Graph(
+                            figure=px.scatter(x=[0,1,2,3,4], y=[0,1,4,9,16]),
+                            id='scatter_plot',
+                            style={
+                                'height' : '50em'
+                            }
+                        ),
                         style={
                             'backgroundColor' : 'rgb(0,220,0)',
                             'height' : '50em'
@@ -169,6 +180,7 @@ def render_visualization():
                                                             )
                                                         ),
                                                         dbc.Collapse(
+                                                            children=dcc.Checklist(options=[], value=None, id="selected_author"),
                                                             id="collapse_cluster_board",
                                                         ),
                                                     ]
@@ -218,35 +230,84 @@ def render_visualization():
         [Input("scatter_plot", "clickData")]
     )
     def generate_cluster_board(click_data):
-        if not click_data:
-            return dbc.CardBody("Default Cluster Board stats"),
+        if click_data:
+            chosen_cluster = int(click_data["points"][0]['curveNumber'])
         else:
-            return dbc.CardBody("Updated Cluster board stats")
+            return dbc.CardBody("Select a cluster from the scatterplot", id="selected_author")
 
+        slice = df[df["cluster"] == chosen_cluster]
 
+        author_stats = slice['author'].value_counts().to_dict()
+        keyword_stats = pd.Series([j for i in list(df['keywords'].values) for j in i]).value_counts().to_dict()
+        
+        content = dbc.CardBody(
+            [
+                html.H4(f"Cluster {chosen_cluster}:", className="card-title"),
+                html.H5("Authors:"),
+                html.P(str(author_stats)),
+            ]
+        )
+
+        return content
     # callback to update dashboard with slider values
     @app.callback(
             [Output('scatter_plot', 'figure')],
             [Input('wt1_slider', 'value'),
             Input('wt2_slider', 'value'),
             Input('wt3_slider', 'value'),
-            Input('cluster_slider', 'value')]
+            Input('cluster_slider', 'value'),
+            Input('author_filter', 'value'),
+            Input('keyword_filter', 'value')]
     )
-    def update_chart(wt1, wt2, wt3, k):
+    def update_chart(wt1, wt2, wt3, k, authors_filter, keywords_filter):
         global df
+
+        # concatenate embeddings based on weights
         concat_embeddings(df, wt1, wt2, wt3)
+
+        # perform clustering
         embedding_combo_array = np.array(df['concat_embedding'].tolist())
         km = KMeans(n_clusters=k, random_state=10).fit(embedding_combo_array)
         df['cluster'] = km.labels_ 
         
-        #insert call to recalculate PCA#
+        # dimensionality reduction
         df = pca_columns(df)
-        
-        fig = px.scatter(df, x="PC1", y="PC2", color="cluster",
-                hover_data=['title'])
 
-        # temporary scatterplot
-        #fig = px.scatter(x=[0,1,2,3,4], y=[0,1,4,9,16])
+        # filtering
+        if not authors_filter:
+            authors_filter = author_set
+        if not keywords_filter:
+            keywords_filter = keyword_set
+
+        temp_df = df[df['author'].isin(authors_filter)]
+        filtered_df = {}
+        for index, row in temp_df.iterrows():
+            if any(x in keywords_filter for x in row["keywords"]):
+                filtered_df[index] = row
+
+        filtered_df = pd.DataFrame(filtered_df).T
+
+        fig = go.Figure()
+
+        for x in range(k):
+            fig.add_trace(go.Scatter(x=filtered_df[filtered_df["cluster"] == x]["PC1"].tolist(),
+                                        y=filtered_df[filtered_df["cluster"] == x]["PC2"].tolist(),
+                                        mode="markers",
+                                        marker=dict(
+                                            color = DEFAULT_COLORS[x], 
+                                            size = 16,
+                                        ),
+                                        name="Cluster {}".format(x)
+                                    )
+            )
+        
+        fig.update_layout(
+            showlegend=True,
+            scene={
+                'xaxis_title' : 'PC1',
+                'yaxis_title' : 'PC2'
+            }
+        )
 
         return [fig]
 
@@ -261,5 +322,20 @@ if __name__ == "__main__":
     
     with open("dataFrames/df_embeddings.pckl", "rb") as f:
         df = pickle.load(f)
+
+    author_filter = []
+    authors = df['author'].tolist()
+    author_set = list(set(authors))
+    for author in author_set:
+        author_filter.append({'label': author, 'value': author})
+        
+    keyword_set = []
+    keyword_filter = []
+    keyword_lol = df['keywords'].tolist()
+    for keyword in keyword_lol:
+        keyword_set.extend(keyword)  
+    keyword_set = list(set(keyword_set))
+    for keyword in keyword_set:
+        keyword_filter.append({'label': keyword, 'value': keyword})
 
     render_visualization()
