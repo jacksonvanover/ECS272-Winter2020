@@ -24,7 +24,7 @@ def concat_embeddings(input_df, embedding1_wt, embedding2_wt, embedding3_wt ):
         weighted2.append(list(map(lambda x: x*embedding2_wt, item)))
     #print(input_df.embedding2.tolist())
     #print(weighted2)
-    for item in input_df.pixel_embedding.tolist():
+    for item in input_df.lbp_embedding.tolist():
         weighted3.append(list(map(lambda x: x*embedding3_wt, item)))
     
     for i in range(len(weighted1)):
