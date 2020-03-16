@@ -354,13 +354,15 @@ def render_visualization():
                         line = dict(
                             color = "rgb(0,0,0)",
                             width = 7
-                        )
-                    )
+                        ),
+                    ),
+                name="Filtered Points"
                 )
             )
 
         fig.update_layout(
             showlegend=True,
+            legend={'x' : 0.8, 'y' : 0.9, 'bordercolor': "Black", 'borderwidth': 1},
             xaxis={
                 'ticks' : '',
                 'showticklabels' : False
