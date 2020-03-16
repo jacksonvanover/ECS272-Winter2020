@@ -17,6 +17,9 @@ import plotly.graph_objects as go
 from Embedding_concat import concat_embeddings
 from pca_reduction import pca_columns
 
+from io import BytesIO
+import base64
+
 '''
 COLUMN_NAMES :
         'image',
@@ -118,9 +121,9 @@ def render_visualization():
                                         ]
                                     )
                                 ],
-                                style={
-                                    'height' : '29em',
-                                }
+                                #style={
+                                #    'height' : '29em',
+                                #}
                             ),
                             html.Div(
                                 dbc.Card(
@@ -146,10 +149,32 @@ def render_visualization():
                                         )
                                     ]
                                 ),
-                                style={
-                                    'height' : '25em',
-                                }
+                                #style={
+                                #    'height' : '15em',
+                                #}
+                            ),
+                            #showing chosen chart
+                            html.Div(
+                                dbc.Card([
+                                    dbc.CardHeader(dcc.Markdown("#### Chosen Chart", style={"textAlign" : "center"})),
+                                    dbc.CardBody([
+                                        html.Img(
+                                            id="body-image",
+                                            src = "",
+                                            alt = "choose a point",
+                                            draggable = "True",
+                                            style={
+                                                'height' : '10em',
+                                                "textAlign" : "center"
+                                            }
+                                        ),
+                                    ])
+                                ]),
+                                #style={
+                                #    'height' : '25em',
+                                #}
                             )
+                                    
                         ],
                         style={
                             'height' : '50em'    
@@ -223,7 +248,45 @@ def render_visualization():
             ])
         ]
     )
-
+    
+    #callback to show image
+    @app.callback(
+        Output("body-image","src"),
+        [Input("scatter_plot", "clickData")]
+    )
+    def load_image(click_data):
+        global df
+        
+        if not click_data:
+            return ''
+        
+        #determine datapoint from click data
+        pc1 = click_data["points"][0]['x']
+        pc2 = click_data["points"][0]['y']
+        pt_df = df[df['PC1'] == pc1]
+        pt_df = pt_df[pt_df['PC2'] == pc2]
+        
+        #load image from dataframe
+        i = pt_df.index[0]
+        img = pt_df['image'][i]
+        
+        #remove alpha channel
+        img = img.convert("RGB")
+        
+        #save image to bytes, jpg
+        img_out = BytesIO()
+        img.save(img_out, format = "JPEG")
+        
+        #encode to base64 byte string
+        img_jpg_data = base64.b64encode(img_out.getvalue())
+        if not isinstance(img_jpg_data, str):
+            img_jpg_data = img_jpg_data.decode()
+        
+        #return byte string of image
+        data_url = 'data:image/jpg;base64,' + img_jpg_data
+        return data_url
+    
+    
     # callback to toggle the collapsible data coverage board and
     # cluster board
     @app.callback(
