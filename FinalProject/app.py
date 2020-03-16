@@ -36,7 +36,7 @@ COLUMN_NAMES :
 DEFAULT_COLORS = [
     '#1f77b4',  # muted blue
     '#ff7f0e',  # safety orange
-    '#d62728',  # brick red
+    '#d62728',  # brick red 
     '#bcbd22',  # curry yellow-green
     '#e377c2',  # raspberry yogurt pink
     '#7f7f7f',  # middle gray
@@ -363,25 +363,34 @@ def render_visualization():
         # dimensionality reduction
         df = pca_columns(df)
 
-        # filtering
-        if not authors_filter:
-            authors_filter = author_set
-        if not keywords_filter:
-            keywords_filter = keyword_set
+        # gathering points to highlight from filters
+        # if not authors_filter:
+        #     authors_filter = author_set
+        # if not keywords_filter:
+        #     keywords_filter = keyword_set  
 
-        temp_df = df[df['author'].isin(authors_filter)]
-        filtered_df = {}
-        for index, row in temp_df.iterrows():
+        selected_authors_indices = df[df['author'].isin(authors_filter)].index
+        selected_keywords_indices = []
+        for index, row in df.iterrows():
             if any(x in keywords_filter for x in row["keywords"]):
-                filtered_df[index] = row
+                selected_keywords_indices.append(index)
 
-        filtered_df = pd.DataFrame(filtered_df).T
+        if not selected_authors_indices.empty and selected_keywords_indices:
+            selected_row_indices = list(set(selected_authors_indices) & set(selected_keywords_indices))
+        elif not selected_authors_indices.empty:
+            selected_row_indices = selected_authors_indices
+        elif selected_keywords_indices:
+            selected_row_indices = selected_keywords_indices
+        else:
+            selected_row_indices = []
+
+        highlight_points_df = df.iloc[selected_row_indices]
 
         fig = go.Figure()
 
         for x in range(k):
-            fig.add_trace(go.Scatter(x=filtered_df[filtered_df["cluster"] == x]["PC1"].tolist(),
-                                        y=filtered_df[filtered_df["cluster"] == x]["PC2"].tolist(),
+            fig.add_trace(go.Scatter(x=df[df["cluster"] == x]["PC1"].tolist(),
+                                        y=df[df["cluster"] == x]["PC2"].tolist(),
                                         mode="markers",
                                         opacity=0.65,
                                         marker=dict(
@@ -395,9 +404,28 @@ def render_visualization():
                                         name="Cluster {}".format(x)
                                     )
             )
-        
+
+        if not highlight_points_df.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=highlight_points_df["PC1"].tolist(),
+                    y=highlight_points_df["PC2"].tolist(),
+                    mode="markers",
+                    marker=dict(
+                        color="rgba(0,0,0,0)",
+                        size=23,
+                        line = dict(
+                            color = "rgb(0,0,0)",
+                            width = 7
+                        ),
+                    ),
+                name="Filtered Points"
+                )
+            )
+
         fig.update_layout(
             showlegend=True,
+            legend={'x' : 0.8, 'y' : 0.9, 'bordercolor': "Black", 'borderwidth': 1},
             xaxis={
                 'ticks' : '',
                 'showticklabels' : False
