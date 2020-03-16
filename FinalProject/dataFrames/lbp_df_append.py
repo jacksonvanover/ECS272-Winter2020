@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import scale
 from skimage.feature import local_binary_pattern
 from skimage.transform import resize
 
@@ -17,12 +18,18 @@ def lbp_hist(df_img, pts = 8, radius = 1):
     lbp_img = local_binary_pattern(img,pts,radius, method = 'default')
     
     #histogram for feature space
-    (hist, _) = np.histogram(lbp_img.ravel(),bins=10)
+    (hist, bin_edges) = np.histogram(lbp_img.ravel(),bins=20)
     hist = list(hist)
+    
+    #throw out last bin (242+), because it's such an outlier, in all graph cases
+    hist.pop(-1)
+    
+    #scale, with mean and variance
+    hist = list(scale(hist))
     
     return hist
 
-def w2v_norm(row, w_min, w_max):
+def row_norm(row, w_min, w_max):
     
     #add minimum if less than 0
     if w_min < 0:
@@ -45,15 +52,19 @@ df = pd.read_pickle("df_embeddings.pckl")
 lbp_df = df['image'].apply(lbp_hist)
 
 #get max value of lbp histogram bin
-lbp_max = 0
+lbp_max = -2
+lbp_min = 2
 for row in lbp_df:
     lbp_max = max( (max(row),lbp_max) )
+    lbp_min = min( (min(row),lbp_min) )
 
 #normalize to 0, 1
-lbp_df = lbp_df.apply(lambda lbp_hist: lbp_hist/lbp_max)
+lbp_df = lbp_df.apply(row_norm,args = (lbp_min,lbp_max))
 
 #add column to df
 lbp_df = lbp_df.rename("lbp_embedding")
+if "lbp_embedding" in df:
+    df.drop(columns = "lbp_embedding", inplace = True)
 df = pd.concat([df,lbp_df],axis = 1)
 
 #let's fix word2vec as well
@@ -64,7 +75,7 @@ for row in df['word2vec_embeddings']:
     w2v_min = min((min(row),w2v_min))
 
 #normalize based on min and max
-df['word2vec_embeddings'] = df['word2vec_embeddings'].apply(w2v_norm,args = (w2v_min,w2v_max))
+df['word2vec_embeddings'] = df['word2vec_embeddings'].apply(row_norm,args = (w2v_min,w2v_max))
 
 #to csv to inspect
 #df.to_csv("embedded_lbp_data.csv")
