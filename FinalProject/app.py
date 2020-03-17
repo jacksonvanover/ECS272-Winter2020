@@ -41,7 +41,7 @@ DEFAULT_COLORS = [
     '#bcbd22',  # curry yellow-green
     '#e377c2',  # raspberry yogurt pink
     '#7f7f7f',  # middle gray
-    '#17becf'   # blue-teal
+    '#17becf',  # blue-teal
     '#2ca02c',  # cooked asparagus green
 ]
 
@@ -154,28 +154,6 @@ def render_visualization():
                                 #    'height' : '15em',
                                 #}
                             ),
-                            #showing chosen chart
-                            html.Div(
-                                dbc.Card([
-                                    dbc.CardHeader(dcc.Markdown("#### Chosen Chart", style={"textAlign" : "center"})),
-                                    dbc.CardBody([
-                                        html.Img(
-                                            id="body-image",
-                                            src = "",
-                                            alt = "choose a point",
-                                            draggable = "True",
-                                            style={
-                                                'height' : '10em',
-                                                "textAlign" : "center"
-                                            }
-                                        ),
-                                    ])
-                                ]),
-                                #style={
-                                #    'height' : '25em',
-                                #}
-                            )
-                                    
                         ],
                         style={
                             'height' : '50em'    
@@ -207,6 +185,31 @@ def render_visualization():
                     html.Div(
                         children=html.Div(
                                     children=[
+                                        #chart image 
+                                        #showing chosen chart
+                                        dbc.Card([
+                                            dbc.CardHeader(dbc.Button(
+                                                dcc.Markdown("#### Chosen Chart", style={"textAlign" : "center"}),
+                                                color="link",
+                                                id="chosen_chart_board_toggle",
+                                                
+                                            )),
+                                            dbc.Collapse(
+                                                dbc.CardBody([
+                                                    html.Img(
+                                                        id="body-image",
+                                                        src = "",
+                                                        alt = "choose a point",
+                                                        draggable = "True",
+                                                        style={
+                                                            'height' : '10em',
+                                                            "textAlign" : "center"
+                                                        }
+                                                    ),
+                                                ]),
+                                                id="collapse_chosen_chart_board",
+                                            )
+                                        ]),
                                         dbc.Card(
                                             children=[
                                                         dbc.CardHeader(
@@ -310,16 +313,19 @@ def render_visualization():
     
     
     # callback to toggle the collapsible data coverage board and
-    # cluster board
+    # cluster board and chosen chart board
     @app.callback(
         [Output("collapse_data_coverage_board", "is_open"),
-        Output("collapse_cluster_board", "is_open")],
+        Output("collapse_cluster_board", "is_open"),
+        Output("collapse_chosen_chart_board","is_open")],
         [Input("data_coverage_board_toggle", "n_clicks"),
-        Input("cluster_board_toggle", "n_clicks")],
+        Input("cluster_board_toggle", "n_clicks"),
+        Input("chosen_chart_board_toggle", "n_clicks")],
         [State("collapse_data_coverage_board", "is_open"),
-        State("collapse_cluster_board", "is_open")],
+        State("collapse_cluster_board", "is_open"),
+        State("collapse_chosen_chart_board", "is_open")],
     )
-    def toggle_accordion(n1, n2, is_open1, is_open2):
+    def toggle_accordion(n1, n2, n3, is_open1, is_open2, is_open3):
         ctx = dash.callback_context
 
         if not ctx.triggered:
@@ -328,10 +334,12 @@ def render_visualization():
             button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
         if button_id == "data_coverage_board_toggle" and n1:
-            return not is_open1, is_open2
+            return not is_open1, is_open2, is_open3
         elif button_id == "cluster_board_toggle" and n2:
-            return is_open1, not is_open2
-        return True, True
+            return is_open1, not is_open2, is_open3
+        elif button_id == "chosen_chart_board_toggle" and n3:
+            return is_open1, is_open2, not is_open3
+        return True, True, True
 
 
     # callback to display stats on the cluster selected from the scatterplot
