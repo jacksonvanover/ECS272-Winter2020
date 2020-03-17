@@ -33,6 +33,7 @@ COLUMN_NAMES :
         'word2vec_embeddings'
 '''
 TREEMAP_FEATURE = []
+TREEMAP_CLICK_DATA = None
 
 DEFAULT_COLORS = [
     '#1f77b4',  # muted blue
@@ -382,6 +383,8 @@ def render_visualization():
     )
     def update_chart(wt1, wt2, wt3, k, authors_filter, keywords_filter, treemap_click_data):
         global df
+        global TREEMAP_FEATURE
+        global TREEMAP_CLICK_DATA
 
         # concatenate embeddings based on weights
         concat_embeddings(df, wt1, wt2, wt3)
@@ -394,11 +397,19 @@ def render_visualization():
         # dimensionality reduction
         df = pca_columns(df)
 
-        global TREEMAP_FEATURE
         selected_feature = []
-        if treemap_click_data is not None:
-            selected_feature.append(treemap_click_data['points'][0]['label'])
         treemap_df = {}
+
+        # if the click_data has changed, collect the clicked feature name
+        if treemap_click_data != TREEMAP_CLICK_DATA:
+            TREEMAP_CLICK_DATA = treemap_click_data
+            selected_feature.append(treemap_click_data['points'][0]['label'])
+            
+        # otherwise, use the old clicked feature name
+        else:
+            selected_feature = TREEMAP_FEATURE
+            TREEMAP_FEATURE = []
+        
         if not TREEMAP_FEATURE == selected_feature:
             TREEMAP_FEATURE = selected_feature
             for index, row in df.iterrows():
