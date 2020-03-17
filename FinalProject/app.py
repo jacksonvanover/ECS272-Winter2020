@@ -109,7 +109,7 @@ def render_visualization():
                                                         marks={str(num): str(num) for num in range(0,2)}, 
                                                         step=0.01
                                                     ),
-                                                    dcc.Markdown("##### Local Binary Encoding", style={"textAlign" : "center"}),
+                                                    dcc.Markdown("##### Visual Similarity", style={"textAlign" : "center"}),
                                                     dcc.Slider(
                                                         id='wt3_slider', 
                                                         min= 0, 
