@@ -346,26 +346,49 @@ def render_visualization():
     # callback to display stats on the cluster selected from the scatterplot
     @app.callback(
         Output("collapse_cluster_board", "children"),
-        [Input("scatter_plot", "clickData")]
+        [Input("scatter_plot", "clickData"),
+        Input("scatter_plot", "selectedData")]
     )
-    def generate_cluster_board(click_data):
-        if click_data:
+    def generate_cluster_board(click_data, lasso_data):
+        if lasso_data:
+            lasso_points = lasso_data["points"]
+            PC1_coords = []
+            PC2_coords = []
+            for point in lasso_points:
+                PC1_coords.append(point['x'])
+                PC2_coords.append(point['y'])
+            lassoed_df = df[(df['PC1'].isin(PC1_coords)) & (df['PC2'].isin(PC2_coords))]
+
+            author_stats = lassoed_df['author'].value_counts().to_dict()
+            keyword_stats = pd.Series([j for i in list(lassoed_df['keywords'].values) for j in i]).value_counts().to_dict()
+            
+            content = dbc.CardBody(
+                [
+                    html.H4(f"Lassoed Selection:", className="card-title"),
+                    html.H5("Authors:"),
+                    html.P(str(sorted(author_stats.items(), key=lambda x : x[1], reverse=True))),
+                    html.H5("Keywords:"),
+                    html.P(str(sorted(keyword_stats.items(), key=lambda x : x[1], reverse=True))),
+                ]
+            )
+        elif click_data:
             chosen_cluster = int(click_data["points"][0]['curveNumber'])
+            slice = df[df["cluster"] == chosen_cluster]
+
+            author_stats = slice['author'].value_counts().to_dict()
+            keyword_stats = pd.Series([j for i in list(slice['keywords'].values) for j in i]).value_counts().to_dict()
+            
+            content = dbc.CardBody(
+                [
+                    html.H4(f"Cluster {chosen_cluster}:", className="card-title"),
+                    html.H5("Authors:"),
+                    html.P(str(sorted(author_stats.items(), key=lambda x : x[1], reverse=True))),
+                    html.H5("Keywords:"),
+                    html.P(str(sorted(keyword_stats.items(), key=lambda x : x[1], reverse=True))),
+                ]
+            )
         else:
-            return dbc.CardBody("Select a cluster from the scatterplot", id="selected_author")
-
-        slice = df[df["cluster"] == chosen_cluster]
-
-        author_stats = slice['author'].value_counts().to_dict()
-        keyword_stats = pd.Series([j for i in list(df['keywords'].values) for j in i]).value_counts().to_dict()
-        
-        content = dbc.CardBody(
-            [
-                html.H4(f"Cluster {chosen_cluster}:", className="card-title"),
-                html.H5("Authors:"),
-                html.P(str(author_stats)),
-            ]
-        )
+            content = dbc.CardBody("Select a cluster from the scatterplot", id="selected_author")
 
         return content
 
