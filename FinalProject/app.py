@@ -32,6 +32,7 @@ COLUMN_NAMES :
         'represented_features_embeddings',
         'word2vec_embeddings'
 '''
+TREEMAP_FEATURE = []
 
 DEFAULT_COLORS = [
     '#1f77b4',  # muted blue
@@ -216,9 +217,30 @@ def render_visualization():
                                                             )
                                                         ),
                                                         dbc.Collapse(
-                                                            dbc.CardBody("Data Coverage Board goes here..."),
+                                                            dbc.CardBody(
+                                                                # dcc.Graph(
+                                                                #     figure=
+                                                                #         px.treemap(
+                                                                #             df_fake,
+                                                                #             path=['features'],
+                                                                #             values='feature_frequency',
+                                                                #             color=feature_frequency,
+                                                                #         ),
+                                                                #     id='treemap',
+                                                                #     )
+                                                                ),
                                                             id="collapse_data_coverage_board",
                                                         ),
+                                                        dcc.Graph(
+                                                                figure=
+                                                                    px.treemap(
+                                                                        df_fake,
+                                                                        path=['features'],
+                                                                        values='feature_frequency',
+                                                                        color=feature_frequency,
+                                                                    ),
+                                                                id='treemap',
+                                                                )
                                                     ]
                                             ),
                                         dbc.Card(
@@ -347,9 +369,10 @@ def render_visualization():
             Input('wt3_slider', 'value'),
             Input('cluster_slider', 'value'),
             Input('author_filter', 'value'),
-            Input('keyword_filter', 'value')]
+            Input('keyword_filter', 'value'),
+            Input("treemap", "clickData")]
     )
-    def update_chart(wt1, wt2, wt3, k, authors_filter, keywords_filter):
+    def update_chart(wt1, wt2, wt3, k, authors_filter, keywords_filter, treemap_click_data):
         global df
 
         # concatenate embeddings based on weights
@@ -363,12 +386,19 @@ def render_visualization():
         # dimensionality reduction
         df = pca_columns(df)
 
-        # gathering points to highlight from filters
-        # if not authors_filter:
-        #     authors_filter = author_set
-        # if not keywords_filter:
-        #     keywords_filter = keyword_set  
+        global TREEMAP_FEATURE
+        selected_feature = []
+        if treemap_click_data is not None:
+            selected_feature.append(treemap_click_data['points'][0]['label'])
+        treemap_df = {}
+        if not TREEMAP_FEATURE == selected_feature:
+            TREEMAP_FEATURE = selected_feature
+            for index, row in df.iterrows():
+                if any(x in selected_feature for x in row["features"]):
+                    treemap_df[index] = row
+        treemap_df = pd.DataFrame(treemap_df).T
 
+        # select points for highlighting
         selected_authors_indices = df[df['author'].isin(authors_filter)].index
         selected_keywords_indices = []
         for index, row in df.iterrows():
@@ -405,6 +435,7 @@ def render_visualization():
                                     )
             )
 
+        # plot highlighted points 
         if not highlight_points_df.empty:
             fig.add_trace(
                 go.Scatter(
@@ -420,6 +451,26 @@ def render_visualization():
                         ),
                     ),
                 name="Filtered Points"
+                )
+            )
+
+        # plot treemap selection 
+        if not treemap_df.empty:
+            fig.add_trace(
+                go.Scatter(
+                    x=treemap_df["PC1"].tolist(),
+                    y=treemap_df["PC2"].tolist(),
+                    mode="markers",
+                    marker_symbol="asterisk",
+                    marker=dict(
+                        color="rgb(0,0,0)",
+                        size=23,
+                        line = dict(
+                            color = "rgb(0,0,0)",
+                            width = 2
+                        ),
+                    ),
+                name="Treemap Selection"
                 )
             )
 
@@ -450,7 +501,20 @@ if __name__ == "__main__":
     
     with open("dataFrames/df_embeddings.pckl", "rb") as f:
         df = pickle.load(f)
-
+######treeMap###############
+    matrix=np.zeros([55,33])
+    sum_list=np.array((1,33))
+    for i, value in enumerate(df.represented_features_embeddings):
+        matrix[i,:]=np.array(value)
+    feature_frequency=np.sum(matrix, axis=0).tolist()
+        
+    features=['school', 'sex', 'age', 'address','famsize','Pstatus', 'Medu','Fedu', 'Mjob', 
+          'Fjob', 'reason', 'guardian', 'traveltime', 'studytime', 'failures', 'schoolsup',
+          'famsup', 'paid', 'activities', 'nursery', 'higher', 'internet','romantic',
+          'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences', 'G1',
+          'G2', 'G3']
+    df_fake = pd.DataFrame(dict(features=features, feature_frequency=feature_frequency))
+######treeMap###############
     author_filter = []
     authors = df['author'].tolist()
     author_set = list(set(authors))
