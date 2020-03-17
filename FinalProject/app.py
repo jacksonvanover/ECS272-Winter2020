@@ -40,7 +40,7 @@ DEFAULT_COLORS = [
     '#bcbd22',  # curry yellow-green
     '#e377c2',  # raspberry yogurt pink
     '#7f7f7f',  # middle gray
-    '#17becf'   # blue-teal
+    '#17becf',  # blue-teal
     '#2ca02c',  # cooked asparagus green
 ]
 
