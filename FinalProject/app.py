@@ -238,7 +238,7 @@ def render_visualization():
                                                                 figure=
                                                                     px.treemap(
                                                                         df_fake,
-                                                                        path=['features'],
+                                                                        path=['Features','features'],
                                                                         values='feature_frequency',
                                                                         color=feature_frequency,
                                                                     ),
@@ -404,6 +404,8 @@ def render_visualization():
             for index, row in df.iterrows():
                 if any(x in selected_feature for x in row["features"]):
                     treemap_df[index] = row
+        else:
+            TREEMAP_FEATURE = []
         treemap_df = pd.DataFrame(treemap_df).T
 
         # select points for highlighting
@@ -455,7 +457,7 @@ def render_visualization():
                         size=23,
                         line = dict(
                             color = "rgb(0,0,0)",
-                            width = 7
+                            width = 3
                         ),
                     ),
                 name="Filtered Points"
@@ -469,10 +471,10 @@ def render_visualization():
                     x=treemap_df["PC1"].tolist(),
                     y=treemap_df["PC2"].tolist(),
                     mode="markers",
-                    marker_symbol="asterisk",
+                    marker_symbol="line-ne",
                     marker=dict(
                         color="rgb(0,0,0)",
-                        size=23,
+                        size=17,
                         line = dict(
                             color = "rgb(0,0,0)",
                             width = 2
@@ -522,6 +524,7 @@ if __name__ == "__main__":
           'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences', 'G1',
           'G2', 'G3']
     df_fake = pd.DataFrame(dict(features=features, feature_frequency=feature_frequency))
+    df_fake["Features"] = "Features"
 ######treeMap###############
     author_filter = []
     authors = df['author'].tolist()
